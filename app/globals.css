@@ -41,75 +41,104 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ─── Light: Slate blue ────────────────────────────────────── */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+  --radius: 1rem;
+
+  --background: #e8ecf0;
+  --foreground: #2d3a4a;
+  --card: #e8ecf0;
+  --card-foreground: #2d3a4a;
+  --popover: #e8ecf0;
+  --popover-foreground: #2d3a4a;
+  --primary: #4a7fa5;
+  --primary-foreground: #ffffff;
+  --secondary: #e8ecf0;
+  --secondary-foreground: #7a8fa6;
+  --muted: #e8ecf0;
+  --muted-foreground: #7a8fa6;
+  --accent: #e8ecf0;
+  --accent-foreground: #2d3a4a;
+  --destructive: #e05050;
+  --border: transparent;
+  --input: #e8ecf0;
+  --ring: rgba(74, 127, 165, 0.5);
+
+  --chart-1: #4a7fa5;
+  --chart-2: #3a9e6e;
+  --chart-3: #d4a017;
+  --chart-4: #7a5fa5;
+  --chart-5: #c05050;
+
+  --sidebar: #e8ecf0;
+  --sidebar-foreground: #2d3a4a;
+  --sidebar-primary: #4a7fa5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8ecf0;
+  --sidebar-accent-foreground: #2d3a4a;
+  --sidebar-border: transparent;
+  --sidebar-ring: rgba(74, 127, 165, 0.5);
+
+  /* neu shadow tokens */
+  --neu-raised:
+    6px 6px 12px -1px rgba(0, 0, 0, 0.13),
+    -6px -6px 12px -1px rgba(255, 255, 255, 0.8);
+  --neu-raised-sm:
+    3px 3px 7px -1px rgba(0, 0, 0, 0.12),
+    -3px -3px 7px -1px rgba(255, 255, 255, 0.78);
+  --neu-inset:
+    inset 4px 4px 8px -1px rgba(0, 0, 0, 0.13),
+    inset -4px -4px 8px -1px rgba(255, 255, 255, 0.8);
 }
 
+/* ─── Dark: Charcoal ───────────────────────────────────────── */
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --background: #2e3340;
+  --foreground: #d0d8e8;
+  --card: #2e3340;
+  --card-foreground: #d0d8e8;
+  --popover: #2e3340;
+  --popover-foreground: #d0d8e8;
+  --primary: #5b8fff;
+  --primary-foreground: #ffffff;
+  --secondary: #2e3340;
+  --secondary-foreground: #7a8aaa;
+  --muted: #2e3340;
+  --muted-foreground: #7a8aaa;
+  --accent: #2e3340;
+  --accent-foreground: #d0d8e8;
+  --destructive: #e05050;
+  --border: transparent;
+  --input: #2e3340;
+  --ring: rgba(91, 143, 255, 0.5);
+
+  --chart-1: #5b8fff;
+  --chart-2: #3aae6e;
+  --chart-3: #d4a830;
+  --chart-4: #a070e8;
+  --chart-5: #e05050;
+
+  --sidebar: #2e3340;
+  --sidebar-foreground: #d0d8e8;
+  --sidebar-primary: #5b8fff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2e3340;
+  --sidebar-accent-foreground: #d0d8e8;
+  --sidebar-border: transparent;
+  --sidebar-ring: rgba(91, 143, 255, 0.5);
+
+  --neu-raised:
+    6px 6px 12px -1px rgba(0, 0, 0, 0.3),
+    -6px -6px 12px -1px rgba(255, 255, 255, 0.06);
+  --neu-raised-sm:
+    3px 3px 7px -1px rgba(0, 0, 0, 0.28),
+    -3px -3px 7px -1px rgba(255, 255, 255, 0.055);
+  --neu-inset:
+    inset 4px 4px 8px -1px rgba(0, 0, 0, 0.3),
+    inset -4px -4px 8px -1px rgba(255, 255, 255, 0.06);
 }
 
+/* ─── Base ─────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -117,4 +146,221 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ─── Neumorphism ──────────────────────────────────────────────
+   @layer utilities wins over base and components in Tailwind v4,
+   so these selectors override compiled utility values.
+─────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* ── Wipe all borders ── */
+  .border,
+  .border-border,
+  [class*="border-"] {
+    border-color: transparent !important;
+    border-width: 0 !important;
+  }
+
+  /* ── Cards (shadcn renders as div.rounded-xl.border.bg-card) ── */
+  .rounded-xl {
+    background-color: var(--background) !important;
+    box-shadow: var(--neu-raised) !important;
+    border: none !important;
+  }
+
+  /* ── Calendar cells (motion.button.aspect-square.rounded-md) ── */
+  button.aspect-square {
+    background-color: var(--background) !important;
+    border: none !important;
+    box-shadow: var(--neu-raised-sm) !important;
+    transition:
+      box-shadow 0.15s ease,
+      transform 0.1s ease !important;
+  }
+
+  button.aspect-square:hover:not(:disabled) {
+    box-shadow: var(--neu-inset) !important;
+  }
+
+  button.aspect-square:active:not(:disabled) {
+    box-shadow: var(--neu-inset) !important;
+    transform: scale(0.97) !important;
+  }
+
+  /* ── All other buttons ── */
+  button:not(.aspect-square):not([role="checkbox"]):not([role="switch"]):not(
+      [role="menuitemcheckbox"]
+    ) {
+    background-color: var(--background) !important;
+    border: none !important;
+    box-shadow: var(--neu-raised-sm) !important;
+    transition:
+      box-shadow 0.15s ease,
+      transform 0.1s ease !important;
+  }
+
+  button:not(.aspect-square):not([role="checkbox"]):not(
+      [role="switch"]
+    ):hover:not(:disabled) {
+    box-shadow:
+      4px 4px 9px -1px rgba(0, 0, 0, 0.14),
+      -4px -4px 9px -1px rgba(255, 255, 255, 0.75) !important;
+  }
+
+  .dark
+    button:not(.aspect-square):not([role="checkbox"]):not(
+      [role="switch"]
+    ):hover:not(:disabled) {
+    box-shadow:
+      4px 4px 9px -1px rgba(0, 0, 0, 0.32),
+      -4px -4px 9px -1px rgba(255, 255, 255, 0.065) !important;
+  }
+
+  button:not(.aspect-square):not([role="checkbox"]):not(
+      [role="switch"]
+    ):active:not(:disabled) {
+    box-shadow: var(--neu-inset) !important;
+    transform: scale(0.98) !important;
+  }
+
+  /* ── Primary buttons (Sign in, Add, etc.) — accent colour with neu shadow ── */
+  button[class*="bg-primary"] {
+    background-color: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+    box-shadow:
+      3px 3px 7px -1px rgba(0, 0, 0, 0.2),
+      -3px -3px 7px -1px rgba(255, 255, 255, 0.15) !important;
+  }
+
+  button[class*="bg-primary"]:hover:not(:disabled) {
+    box-shadow:
+      2px 2px 5px -1px rgba(0, 0, 0, 0.22),
+      -2px -2px 5px -1px rgba(255, 255, 255, 0.12) !important;
+  }
+
+  button[class*="bg-primary"]:active:not(:disabled) {
+    box-shadow:
+      inset 3px 3px 6px -1px rgba(0, 0, 0, 0.25),
+      inset -3px -3px 6px -1px rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* ── Destructive buttons ── */
+  button[class*="bg-destructive"] {
+    background-color: var(--destructive) !important;
+    color: #ffffff !important;
+    box-shadow:
+      3px 3px 7px -1px rgba(0, 0, 0, 0.2),
+      -3px -3px 7px -1px rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* ── Inputs — inset (recessed into surface) ── */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea {
+    background-color: var(--background) !important;
+    border: none !important;
+    box-shadow: var(--neu-inset) !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+  textarea:focus {
+    outline: none !important;
+    box-shadow:
+      var(--neu-inset),
+      0 0 0 2px var(--ring) !important;
+  }
+
+  /* ── Progress bar ── */
+  [role="progressbar"] {
+    background-color: var(--background) !important;
+    box-shadow: var(--neu-inset) !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    border: none !important;
+  }
+
+  /* ── Badges ── */
+  .inline-flex.rounded-full,
+  .inline-flex.rounded-md {
+    border: none !important;
+    box-shadow: var(--neu-raised-sm) !important;
+  }
+
+  /* Coloured badges keep their bg */
+  .inline-flex.bg-green-600,
+  .inline-flex[class*="bg-green"] {
+    background-color: #3a9e6e !important;
+    color: #fff !important;
+  }
+
+  .dark .inline-flex.bg-green-600,
+  .dark .inline-flex[class*="bg-green"] {
+    background-color: #3aae6e !important;
+    color: #fff !important;
+  }
+
+  /* ── Dropdown popover panels ── */
+  [data-radix-popper-content-wrapper] > div {
+    background-color: var(--background) !important;
+    border: none !important;
+    box-shadow: var(--neu-raised) !important;
+  }
+
+  /* ── Checkbox ── */
+  [role="checkbox"] {
+    background-color: var(--background) !important;
+    border: none !important;
+    box-shadow: var(--neu-inset) !important;
+  }
+
+  [role="checkbox"][data-state="checked"] {
+    background-color: var(--primary) !important;
+    box-shadow: var(--neu-raised-sm) !important;
+  }
+}
+
+/* ── Force background tint ── */
+html,
+body {
+  background-color: #e8ecf0 !important;
+}
+
+.dark html,
+.dark body,
+html.dark,
+body.dark {
+  background-color: #2e3340 !important;
+}
+
+/* ── Del / sm buttons explicitly ── */
+button[class*="h-8"],
+button[class*="h-7"],
+button[class*="size-sm"],
+button[class*="px-3"] {
+  background-color: var(--background) !important;
+  border: none !important;
+  box-shadow: var(--neu-raised-sm) !important;
+}
+
+button[class*="h-8"]:active,
+button[class*="h-7"]:active {
+  box-shadow: var(--neu-inset) !important;
+  transform: scale(0.97) !important;
+}
+
+/* ── Checkboxes ── */
+input[type="checkbox"] {
+  appearance: none !important;
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 4px !important;
+  background-color: var(--background) !important;
+  border: none !important;
+  box-shadow: var(--neu-inset) !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary) !important;
+  box-shadow: var(--neu-raised-sm) !important;
 }

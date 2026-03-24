@@ -27,87 +27,117 @@ import {
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 
-// my note: core types I actually use
 type OfficeRow = { id: string; day: string; status: "PLANNED" | "DONE" };
-type TodoRow = { id: string; text: string; done: boolean };
+type TodoRow = { id: string; text: string; done: boolean; user_id: string };
 
 export default function AppPage() {
   const s = supabase();
 
-  // my note: month cursor + local cache
   const [today] = useState(new Date());
   const [cursor, setCursor] = useState(startOfMonth(today));
   const [required, setRequired] = useState<number>(9);
   const [rows, setRows] = useState<OfficeRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // my note: todos live in a simple list, independent of month
   const [todos, setTodos] = useState<TodoRow[]>([]);
   const [draft, setDraft] = useState("");
 
-  const monthStart = startOfMonth(cursor);
-  const monthEnd = endOfMonth(cursor);
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    email: string;
+  } | null>(null);
+
+  // load current user once
+  useEffect(() => {
+    let cancelled = false;
+    s.auth.getUser().then(({ data }) => {
+      if (!cancelled && data.user)
+        setCurrentUser({ id: data.user.id, email: data.user.email ?? "" });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const canModify = (t: TodoRow) =>
+    currentUser?.id === t.user_id ||
+    currentUser?.email === "ahmed.h15@hotmail.com";
+
   const monthLabel = format(cursor, "MMMM yyyy");
 
-  // my note: stable grid (Mon..Sun)
   const gridDays = useMemo(() => {
-    const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const ms = startOfMonth(cursor);
+    const me = endOfMonth(cursor);
+    const gridStart = startOfWeek(ms, { weekStartsOn: 1 });
+    const gridEnd = endOfWeek(me, { weekStartsOn: 1 });
     return eachDayOfInterval({ start: gridStart, end: gridEnd });
   }, [cursor]);
 
-  // my note: scoped month load + settings
-  const load = async () => {
-    setLoading(true);
-    const { data: setts } = await s
-      .from("user_settings")
-      .select("monthly_required_days")
-      .maybeSingle();
-    if (setts?.monthly_required_days != null)
-      setRequired(setts.monthly_required_days);
-
-    const from = format(monthStart, "yyyy-MM-dd");
-    const to = format(monthEnd, "yyyy-MM-dd");
-    const { data: days } = await s
-      .from("office_days")
-      .select("id, day, status")
-      .gte("day", from)
-      .lte("day", to)
-      .order("day", { ascending: true });
-
-    setRows((days ?? []) as OfficeRow[]);
-    setLoading(false);
-  };
-
-  // my note: todos load once; simple order by created
-  const loadTodos = async () => {
-    const { data } = await s
-      .from("todos")
-      .select("id, text, done")
-      .order("created_at", { ascending: true });
-    setTodos((data ?? []) as TodoRow[]);
-  };
-
+  // load office days + required count for the current month
   useEffect(() => {
-    load();
+    let cancelled = false;
+    const ms = startOfMonth(cursor);
+    const me = endOfMonth(cursor);
+    const monthKey = format(ms, "yyyy-MM");
+    const from = format(ms, "yyyy-MM-dd");
+    const to = format(me, "yyyy-MM-dd");
+
+    (async () => {
+      setLoading(true);
+
+      const { data: monthReq } = await s
+        .from("monthly_required_days")
+        .select("required_days")
+        .eq("month", monthKey)
+        .maybeSingle();
+
+      const { data: days } = await s
+        .from("office_days")
+        .select("id, day, status")
+        .gte("day", from)
+        .lte("day", to)
+        .order("day", { ascending: true });
+
+      if (!cancelled) {
+        setRequired(monthReq?.required_days ?? 9);
+        setRows((days ?? []) as OfficeRow[]);
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [cursor]);
+
+  // load todos once — all users' todos
   useEffect(() => {
-    loadTodos();
+    let cancelled = false;
+
+    (async () => {
+      const { data } = await s
+        .from("todos")
+        .select("id, text, done, user_id")
+        .order("created_at", { ascending: true });
+      if (!cancelled) setTodos((data ?? []) as TodoRow[]);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // my note: counters I actually use
   const planned = rows.filter((r) => r.status === "PLANNED").length;
   const done = rows.filter((r) => r.status === "DONE").length;
   const remaining = Math.max(0, required - done);
   const progressPct = Math.min(
     100,
-    Math.round((done / Math.max(1, required)) * 100)
+    Math.round((done / Math.max(1, required)) * 100),
   );
 
   const getRowFor = (d: Date) =>
     rows.find((r) => r.day === format(d, "yyyy-MM-dd"));
 
-  // my note: one path for insert/update/delete (NONE deletes)
   const setStatus = async (d: Date, next: "PLANNED" | "DONE" | "NONE") => {
     const key = format(d, "yyyy-MM-dd");
     const existing = rows.find((r) => r.day === key);
@@ -135,11 +165,10 @@ export default function AppPage() {
       .single();
     if (data)
       setRows((prev) =>
-        prev.map((p) => (p.id === existing.id ? (data as OfficeRow) : p))
+        prev.map((p) => (p.id === existing.id ? (data as OfficeRow) : p)),
       );
   };
 
-  // my note: tap cycle I’ll actually use
   const cycle = async (d: Date) => {
     const r = getRowFor(d);
     if (!r) return setStatus(d, "PLANNED");
@@ -147,7 +176,6 @@ export default function AppPage() {
     return setStatus(d, "NONE");
   };
 
-  // my note: todo CRUD I’ll actually use
   const addTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = draft.trim();
@@ -155,41 +183,44 @@ export default function AppPage() {
     const { data } = await s
       .from("todos")
       .insert({ text })
-      .select("id, text, done")
+      .select("id, text, done, user_id")
       .single();
     if (data) setTodos((prev) => [...prev, data as TodoRow]);
     setDraft("");
   };
 
   const toggleTodo = async (t: TodoRow) => {
+    if (!canModify(t)) return;
     const { data } = await s
       .from("todos")
       .update({ done: !t.done })
       .eq("id", t.id)
-      .select("id, text, done")
+      .select("id, text, done, user_id")
       .single();
     if (data)
       setTodos((prev) =>
-        prev.map((x) => (x.id === t.id ? (data as TodoRow) : x))
+        prev.map((x) => (x.id === t.id ? (data as TodoRow) : x)),
       );
   };
 
   const editTodo = async (t: TodoRow, text: string) => {
+    if (!canModify(t)) return;
     const clean = text.trim();
     if (!clean) return;
     const { data } = await s
       .from("todos")
       .update({ text: clean })
       .eq("id", t.id)
-      .select("id, text, done")
+      .select("id, text, done, user_id")
       .single();
     if (data)
       setTodos((prev) =>
-        prev.map((x) => (x.id === t.id ? (data as TodoRow) : x))
+        prev.map((x) => (x.id === t.id ? (data as TodoRow) : x)),
       );
   };
 
   const deleteTodo = async (t: TodoRow) => {
+    if (!canModify(t)) return;
     await s.from("todos").delete().eq("id", t.id);
     setTodos((prev) => prev.filter((x) => x.id !== t.id));
   };
@@ -220,46 +251,60 @@ export default function AppPage() {
           </Button>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">Settings</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <form
-                className="flex items-center gap-2"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  const fd = new FormData(e.currentTarget as HTMLFormElement);
-                  const val = Number(fd.get("req"));
-                  const safe = Math.max(0, Math.min(31, Math.floor(val)));
-                  await s
-                    .from("user_settings")
-                    .upsert(
-                      { monthly_required_days: safe },
-                      { onConflict: "user_id" }
-                    );
-                  setRequired(safe);
-                }}
-              >
-                <input
-                  name="req"
-                  type="number"
-                  min={0}
-                  max={31}
-                  defaultValue={required}
-                  className="border rounded px-2 py-1 w-20"
-                />
-                <Button size="sm" type="submit">
-                  Save
-                </Button>
-              </form>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">Settings</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <form
+                  className="flex items-center gap-2"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const fd = new FormData(e.currentTarget as HTMLFormElement);
+                    const val = Number(fd.get("req"));
+                    const safe = Math.max(0, Math.min(31, Math.floor(val)));
+                    const monthKey = format(startOfMonth(cursor), "yyyy-MM");
+
+                    await s
+                      .from("monthly_required_days")
+                      .upsert(
+                        { month: monthKey, required_days: safe },
+                        { onConflict: "user_id, month" },
+                      );
+
+                    setRequired(safe);
+                  }}
+                >
+                  <input
+                    name="req"
+                    type="number"
+                    min={0}
+                    max={31}
+                    defaultValue={required}
+                    className="border rounded px-2 py-1 w-20"
+                  />
+                  <Button size="sm" type="submit">
+                    Save
+                  </Button>
+                </form>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="outline"
+            onClick={async () => {
+              await s.auth.signOut();
+              window.location.href = "/";
+            }}
+          >
+            Sign out
+          </Button>
+        </div>
       </header>
 
-      {/* main area: calendar left, todos right (desktop); stacked on mobile */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-4">
         <div className="space-y-4">
           <Card>
@@ -333,13 +378,10 @@ export default function AppPage() {
           </Card>
         </div>
 
-        {/* TODOS — right side box */}
         <aside className="space-y-3">
           <Card>
             <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">My notes / todos</h2>
-              </div>
+              <h2 className="text-sm font-semibold">Suggestions / Bugs</h2>
               <form className="flex gap-2" onSubmit={addTodo}>
                 <Input
                   placeholder="Add a note…"
@@ -358,19 +400,23 @@ export default function AppPage() {
                       checked={t.done}
                       onChange={() => toggleTodo(t)}
                       className="h-4 w-4"
+                      disabled={!canModify(t)}
                     />
                     <input
-                      className="flex-1 rounded border px-2 py-1 text-sm"
+                      className="flex-1 min-w-0 rounded border px-2 py-1 text-sm"
                       defaultValue={t.text}
                       onBlur={(e) => editTodo(t, e.currentTarget.value)}
+                      readOnly={!canModify(t)}
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteTodo(t)}
-                    >
-                      Del
-                    </Button>
+                    {canModify(t) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteTodo(t)}
+                      >
+                        Del
+                      </Button>
+                    )}
                   </div>
                 ))}
                 {todos.length === 0 && (
