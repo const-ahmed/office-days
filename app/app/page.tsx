@@ -267,17 +267,20 @@ export default function AppPage() {
                     const safe = Math.max(0, Math.min(31, Math.floor(val)));
                     const monthKey = format(startOfMonth(cursor), "yyyy-MM");
 
-                    await s
-                      .from("monthly_required_days")
-                      .upsert(
-                        { month: monthKey, required_days: safe },
-                        { onConflict: "user_id, month" },
-                      );
+                    await s.from("monthly_required_days").upsert(
+                      {
+                        user_id: currentUser?.id,
+                        month: monthKey,
+                        required_days: safe,
+                      },
+                      { onConflict: "user_id, month" },
+                    );
 
                     setRequired(safe);
                   }}
                 >
                   <input
+                    key={required}
                     name="req"
                     type="number"
                     min={0}
