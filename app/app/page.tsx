@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   addMonths,
   subMonths,
@@ -25,10 +25,193 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 type OfficeRow = { id: string; day: string; status: "PLANNED" | "DONE" };
 type TodoRow = { id: string; text: string; done: boolean; user_id: string };
+
+type TourStep = {
+  title: string;
+  description: string;
+  refKey: "calendar" | "badges" | "settings" | "todos";
+  placement: "bottom" | "top" | "left";
+};
+
+const TOUR_STEPS: TourStep[] = [
+  {
+    refKey: "calendar",
+    placement: "top",
+    title: "Click any day to mark it",
+    description: "Tap once for Planned, again for Done, once more to clear.",
+  },
+  {
+    refKey: "badges",
+    placement: "bottom",
+    title: "Track your progress",
+    description:
+      "See how many days you've done, planned, and how many remain for the month.",
+  },
+  {
+    refKey: "settings",
+    placement: "bottom",
+    title: "Set your monthly target",
+    description:
+      "Each month can have a different required days count. Open Settings to change it.",
+  },
+  {
+    refKey: "todos",
+    placement: "left",
+    title: "Leave suggestions or bugs",
+    description:
+      "This list is shared with everyone. You can only edit and delete your own entries.",
+  },
+];
+
+function SpotlightTour({
+  steps,
+  onDone,
+}: {
+  steps: TourStep[];
+  onDone: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const current = steps[step];
+
+  useLayoutEffect(() => {
+    const el = document.getElementById(`tour-${current.refKey}`);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRect(r);
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [step, current.refKey]);
+
+  const PAD = 8;
+  const spotTop = rect ? rect.top - PAD : 0;
+  const spotLeft = rect ? rect.left - PAD : 0;
+  const spotW = rect ? rect.width + PAD * 2 : 0;
+  const spotH = rect ? rect.height + PAD * 2 : 0;
+
+  // tooltip position
+  const tipW = 260;
+  let tipTop = 0;
+  let tipLeft = 0;
+  if (rect) {
+    if (current.placement === "bottom") {
+      tipTop = spotTop + spotH + 12;
+      tipLeft = spotLeft + spotW / 2 - tipW / 2;
+    } else if (current.placement === "top") {
+      tipTop = spotTop - 160 - 12;
+      tipLeft = spotLeft + spotW / 2 - tipW / 2;
+    } else {
+      tipTop = spotTop + spotH / 2 - 80;
+      tipLeft = spotLeft - tipW - 12;
+    }
+    // clamp horizontal
+    tipLeft = Math.max(12, Math.min(tipLeft, window.innerWidth - tipW - 12));
+  }
+
+  const arrowStyle = (placement: TourStep["placement"]) => {
+    const base = "absolute w-3 h-3 bg-white rotate-45";
+    if (placement === "bottom")
+      return `${base} -top-1.5 left-1/2 -translate-x-1/2`;
+    if (placement === "top")
+      return `${base} -bottom-1.5 left-1/2 -translate-x-1/2`;
+    return `${base} top-1/2 -right-1.5 -translate-y-1/2`;
+  };
+
+  const isLast = step === steps.length - 1;
+
+  return (
+    <div className="fixed inset-0 z-50">
+      {/* dim overlay with cutout via SVG clipPath */}
+      {rect && (
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ mixBlendMode: "normal" }}
+        >
+          <defs>
+            <mask id="spotlight-mask">
+              <rect width="100%" height="100%" fill="white" />
+              <rect
+                x={spotLeft}
+                y={spotTop}
+                width={spotW}
+                height={spotH}
+                rx={10}
+                fill="black"
+              />
+            </mask>
+          </defs>
+          <rect
+            width="100%"
+            height="100%"
+            fill="rgba(0,0,0,0.6)"
+            mask="url(#spotlight-mask)"
+          />
+        </svg>
+      )}
+
+      {/* click outside to skip */}
+      <div className="absolute inset-0" onClick={onDone} />
+
+      {/* tooltip */}
+      <AnimatePresence mode="wait">
+        {rect && (
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18 }}
+            className="absolute bg-white rounded-xl shadow-2xl p-4 pointer-events-auto"
+            style={{ top: tipTop, left: tipLeft, width: tipW, zIndex: 60 }}
+          >
+            <div className={arrowStyle(current.placement)} />
+            <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">
+              Step {step + 1} of {steps.length}
+            </p>
+            <p className="text-sm font-semibold text-foreground mb-1">
+              {current.title}
+            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+              {current.description}
+            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1">
+                {steps.map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full transition-colors"
+                    style={{
+                      background: i === step ? "var(--primary)" : "#d0d8e8",
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={onDone}
+                >
+                  Skip
+                </button>
+                <button
+                  className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg transition-opacity hover:opacity-90"
+                  style={{ background: "var(--primary)" }}
+                  onClick={() => (isLast ? onDone() : setStep((s) => s + 1))}
+                >
+                  {isLast ? "Done ✓" : "Next →"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function AppPage() {
   const s = supabase();
@@ -47,17 +230,41 @@ export default function AppPage() {
     email: string;
   } | null>(null);
 
-  // load current user once
+  const [showTour, setShowTour] = useState(false);
+
+  // load current user + check tour flag
   useEffect(() => {
     let cancelled = false;
-    s.auth.getUser().then(({ data }) => {
-      if (!cancelled && data.user)
-        setCurrentUser({ id: data.user.id, email: data.user.email ?? "" });
-    });
+    (async () => {
+      const { data: authData } = await s.auth.getUser();
+      if (!authData.user || cancelled) return;
+
+      const user = authData.user;
+      if (!cancelled) setCurrentUser({ id: user.id, email: user.email ?? "" });
+
+      const { data: settings } = await s
+        .from("user_settings")
+        .select("has_seen_tour")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!cancelled && settings && !settings.has_seen_tour) {
+        setShowTour(true);
+      }
+    })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const dismissTour = async () => {
+    setShowTour(false);
+    if (!currentUser) return;
+    await s
+      .from("user_settings")
+      .update({ has_seen_tour: true })
+      .eq("user_id", currentUser.id);
+  };
 
   const canModify = (t: TodoRow) =>
     currentUser?.id === t.user_id ||
@@ -73,7 +280,6 @@ export default function AppPage() {
     return eachDayOfInterval({ start: gridStart, end: gridEnd });
   }, [cursor]);
 
-  // load office days + required count for the current month
   useEffect(() => {
     let cancelled = false;
     const ms = startOfMonth(cursor);
@@ -110,7 +316,6 @@ export default function AppPage() {
     };
   }, [cursor]);
 
-  // load todos once — all users' todos
   useEffect(() => {
     let cancelled = false;
 
@@ -226,210 +431,229 @@ export default function AppPage() {
   };
 
   return (
-    <div className="p-4 mx-auto max-w-6xl space-y-4">
-      <header className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setCursor(subMonths(cursor, 1))}
-          >
-            ←
-          </Button>
-          <motion.h1
-            key={monthLabel}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-xl font-semibold"
-          >
-            {monthLabel}
-          </motion.h1>
-          <Button
-            variant="outline"
-            onClick={() => setCursor(addMonths(cursor, 1))}
-          >
-            →
-          </Button>
-        </div>
+    <>
+      <AnimatePresence>
+        {showTour && <SpotlightTour steps={TOUR_STEPS} onDone={dismissTour} />}
+      </AnimatePresence>
 
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">Settings</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <form
-                  className="flex items-center gap-2"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const fd = new FormData(e.currentTarget as HTMLFormElement);
-                    const val = Number(fd.get("req"));
-                    const safe = Math.max(0, Math.min(31, Math.floor(val)));
-                    const monthKey = format(startOfMonth(cursor), "yyyy-MM");
+      <div className="p-4 mx-auto max-w-6xl space-y-4">
+        <header className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCursor(subMonths(cursor, 1))}
+            >
+              ←
+            </Button>
+            <motion.h1
+              key={monthLabel}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-xl font-semibold"
+            >
+              {monthLabel}
+            </motion.h1>
+            <Button
+              variant="outline"
+              onClick={() => setCursor(addMonths(cursor, 1))}
+            >
+              →
+            </Button>
+          </div>
 
-                    await s.from("monthly_required_days").upsert(
-                      {
-                        user_id: currentUser?.id,
-                        month: monthKey,
-                        required_days: safe,
-                      },
-                      { onConflict: "user_id, month" },
-                    );
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button id="tour-settings" variant="outline">
+                  Settings
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <form
+                    className="flex items-center gap-2"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const fd = new FormData(
+                        e.currentTarget as HTMLFormElement,
+                      );
+                      const val = Number(fd.get("req"));
+                      const safe = Math.max(0, Math.min(31, Math.floor(val)));
+                      const monthKey = format(startOfMonth(cursor), "yyyy-MM");
 
-                    setRequired(safe);
-                  }}
+                      await s.from("monthly_required_days").upsert(
+                        {
+                          user_id: currentUser?.id,
+                          month: monthKey,
+                          required_days: safe,
+                        },
+                        { onConflict: "user_id, month" },
+                      );
+
+                      setRequired(safe);
+                    }}
+                  >
+                    <input
+                      key={required}
+                      name="req"
+                      type="number"
+                      min={0}
+                      max={31}
+                      defaultValue={required}
+                      className="border rounded px-2 py-1 w-20"
+                    />
+                    <Button size="sm" type="submit">
+                      Save
+                    </Button>
+                  </form>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await s.auth.signOut();
+                window.location.href = "/";
+              }}
+            >
+              Sign out
+            </Button>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-4">
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-4">
+                <div
+                  id="tour-badges"
+                  className="flex flex-wrap items-center gap-3"
                 >
-                  <input
-                    key={required}
-                    name="req"
-                    type="number"
-                    min={0}
-                    max={31}
-                    defaultValue={required}
-                    className="border rounded px-2 py-1 w-20"
-                  />
-                  <Button size="sm" type="submit">
-                    Save
-                  </Button>
-                </form>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <Badge variant="secondary">Required: {required}</Badge>
+                  <Badge className="bg-green-600 text-white hover:opacity-90">
+                    Done: {done}
+                  </Badge>
+                  <Badge>Planned: {planned}</Badge>
+                  <Badge variant="destructive">Remaining: {remaining}</Badge>
+                </div>
+                <div className="mt-3">
+                  <Progress value={progressPct} />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {progressPct}% of target reached
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Button
-            variant="outline"
-            onClick={async () => {
-              await s.auth.signOut();
-              window.location.href = "/";
-            }}
-          >
-            Sign out
-          </Button>
-        </div>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-4">
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge variant="secondary">Required: {required}</Badge>
-                <Badge className="bg-green-600 text-white hover:opacity-90">
-                  Done: {done}
-                </Badge>
-                <Badge>Planned: {planned}</Badge>
-                <Badge variant="destructive">Remaining: {remaining}</Badge>
-              </div>
-              <div className="mt-3">
-                <Progress value={progressPct} />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {progressPct}% of target reached
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-2 md:p-4">
-              <div className="grid grid-cols-7 gap-1 text-xs md:text-sm text-muted-foreground px-1 md:px-2">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                  <div key={d} className="text-center">
-                    {d}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1 mt-2">
-                {gridDays.map((d) => {
-                  const inMonth = isSameMonth(d, cursor);
-                  const r = getRowFor(d);
-                  const isToday = isSameDay(d, today);
-                  const base =
-                    "aspect-square rounded-md text-sm flex flex-col items-center justify-center select-none";
-                  const tone = inMonth
-                    ? "bg-card border hover:bg-accent"
-                    : "bg-muted/30 text-muted-foreground";
-                  const ring = isToday ? "ring-2 ring-primary" : "border";
-                  return (
-                    <motion.button
-                      key={d.toISOString()}
-                      whileTap={{ scale: 0.96 }}
-                      className={`${base} ${tone} ${ring}`}
-                      onClick={() => inMonth && cycle(d)}
-                      disabled={!inMonth}
-                      aria-label={`Set status for ${format(d, "PP")}`}
-                    >
-                      <div className="text-xs md:text-sm">{format(d, "d")}</div>
-                      {r?.status === "PLANNED" && (
-                        <span className="mt-1 text-[10px] md:text-xs rounded px-1 py-0.5 bg-yellow-500/20 text-yellow-800">
-                          Planned
-                        </span>
-                      )}
-                      {r?.status === "DONE" && (
-                        <span className="mt-1 text-[10px] md:text-xs rounded px-1 py-0.5 bg-green-500/20 text-green-700">
-                          Done
-                        </span>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-3 px-1">
-                <p>Tap to cycle: none → planned → done → none</p>
-                <p>{loading ? "Loading…" : ""}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <aside className="space-y-3">
-          <Card>
-            <CardContent className="p-4 space-y-3">
-              <h2 className="text-sm font-semibold">Suggestions / Bugs</h2>
-              <form className="flex gap-2" onSubmit={addTodo}>
-                <Input
-                  placeholder="Add a note…"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                />
-                <Button type="submit">Add</Button>
-              </form>
-
-              <div className="space-y-2">
-                {todos.map((t) => (
-                  <div key={t.id} className="flex items-center gap-2">
-                    <input
-                      aria-label="toggle"
-                      type="checkbox"
-                      checked={t.done}
-                      onChange={() => toggleTodo(t)}
-                      className="h-4 w-4"
-                      disabled={!canModify(t)}
-                    />
-                    <input
-                      className="flex-1 min-w-0 rounded border px-2 py-1 text-sm"
-                      defaultValue={t.text}
-                      onBlur={(e) => editTodo(t, e.currentTarget.value)}
-                      readOnly={!canModify(t)}
-                    />
-                    {canModify(t) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteTodo(t)}
+            <Card>
+              <CardContent className="p-2 md:p-4">
+                <div className="grid grid-cols-7 gap-1 text-xs md:text-sm text-muted-foreground px-1 md:px-2">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                    (d) => (
+                      <div key={d} className="text-center">
+                        {d}
+                      </div>
+                    ),
+                  )}
+                </div>
+                <div id="tour-calendar" className="grid grid-cols-7 gap-1 mt-2">
+                  {gridDays.map((d) => {
+                    const inMonth = isSameMonth(d, cursor);
+                    const r = getRowFor(d);
+                    const isToday = isSameDay(d, today);
+                    const base =
+                      "aspect-square rounded-md text-sm flex flex-col items-center justify-center select-none";
+                    const tone = inMonth
+                      ? "bg-card border hover:bg-accent"
+                      : "bg-muted/30 text-muted-foreground";
+                    const ring = isToday ? "ring-2 ring-primary" : "border";
+                    return (
+                      <motion.button
+                        key={d.toISOString()}
+                        whileTap={{ scale: 0.96 }}
+                        className={`${base} ${tone} ${ring}`}
+                        onClick={() => inMonth && cycle(d)}
+                        disabled={!inMonth}
+                        aria-label={`Set status for ${format(d, "PP")}`}
                       >
-                        Del
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                {todos.length === 0 && (
-                  <p className="text-xs text-muted-foreground">No notes yet.</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </aside>
+                        <div className="text-xs md:text-sm">
+                          {format(d, "d")}
+                        </div>
+                        {r?.status === "PLANNED" && (
+                          <span className="mt-1 text-[10px] md:text-xs rounded px-1 py-0.5 bg-yellow-500/20 text-yellow-800">
+                            Planned
+                          </span>
+                        )}
+                        {r?.status === "DONE" && (
+                          <span className="mt-1 text-[10px] md:text-xs rounded px-1 py-0.5 bg-green-500/20 text-green-700">
+                            Done
+                          </span>
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground mt-3 px-1">
+                  <p>Tap to cycle: none → planned → done → none</p>
+                  <p>{loading ? "Loading…" : ""}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <aside className="space-y-3">
+            <Card id="tour-todos">
+              <CardContent className="p-4 space-y-3">
+                <h2 className="text-sm font-semibold">Suggestions / Bugs</h2>
+                <form className="flex gap-2" onSubmit={addTodo}>
+                  <Input
+                    placeholder="Add a note…"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                  />
+                  <Button type="submit">Add</Button>
+                </form>
+
+                <div className="space-y-2">
+                  {todos.map((t) => (
+                    <div key={t.id} className="flex items-center gap-2">
+                      <input
+                        aria-label="toggle"
+                        type="checkbox"
+                        checked={t.done}
+                        onChange={() => toggleTodo(t)}
+                        className="h-4 w-4"
+                        disabled={!canModify(t)}
+                      />
+                      <input
+                        className="flex-1 min-w-0 rounded border px-2 py-1 text-sm"
+                        defaultValue={t.text}
+                        onBlur={(e) => editTodo(t, e.currentTarget.value)}
+                        readOnly={!canModify(t)}
+                      />
+                      {canModify(t) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteTodo(t)}
+                        >
+                          Del
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {todos.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      No notes yet.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
