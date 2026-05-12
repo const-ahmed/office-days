@@ -268,7 +268,7 @@ export default function AppPage() {
 
   const canModify = (t: TodoRow) =>
     currentUser?.id === t.user_id ||
-    currentUser?.email === "ahmed.h15@hotmail.com";
+    currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   const monthLabel = format(cursor, "MMMM yyyy");
 
