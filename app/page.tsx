@@ -81,7 +81,7 @@ export default function Home() {
       {/* sticky CTA banner */}
       <div className="sticky top-0 z-40 flex items-center justify-between gap-4 px-4 py-3 bg-primary text-primary-foreground shadow-md">
         <p className="text-sm font-medium">
-          You&apos;re in demo mode — sign in to save your progress
+          You&apos;re in demo mode. Sign in to save your progress
         </p>
         <div className="flex gap-2 shrink-0">
           <Button size="sm" variant="secondary" asChild>

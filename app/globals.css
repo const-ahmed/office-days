@@ -223,7 +223,7 @@
     transform: scale(0.98) !important;
   }
 
-  /* ── Primary buttons (Sign in, Add, etc.) — accent colour with neu shadow ── */
+  /* Primary buttons (Sign in, Add, etc.) */
   button[class*="bg-primary"] {
     background-color: var(--primary) !important;
     color: var(--primary-foreground) !important;
@@ -244,7 +244,7 @@
       inset -3px -3px 6px -1px rgba(255, 255, 255, 0.1) !important;
   }
 
-  /* ── Destructive buttons ── */
+  /* Destructive buttons */
   button[class*="bg-destructive"] {
     background-color: var(--destructive) !important;
     color: #ffffff !important;
@@ -253,7 +253,7 @@
       -3px -3px 7px -1px rgba(255, 255, 255, 0.1) !important;
   }
 
-  /* ── Inputs — inset (recessed into surface) ── */
+  /* Inputs */
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   textarea {
     background-color: var(--background) !important;
